@@ -1,0 +1,54 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly to catch new vulnerabilities
+    - cron: '0 0 * * 0'
+
+jobs:
+  security_scanning:
+    runs-on: ubuntu-latest
+    name: Security Scanning
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run CodeQL analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: 'cpp'
+        
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      
+  dependency_review:
+    runs-on: ubuntu-latest
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v2
+        
+  secret_scanning:
+    runs-on: ubuntu-latest
+    name: Secret Scanning
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Check for hardcoded secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

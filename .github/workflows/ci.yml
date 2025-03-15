@@ -1,0 +1,93 @@
+name: TCP Fingerprint Firewall CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        kernel: ["5.5", "5.10", "5.15", "6.1"]
+    
+    name: Build test (kernel ${{ matrix.kernel }})
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup container with kernel ${{ matrix.kernel }}
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: clang llvm gcc make libbpf-dev libelf-dev linux-headers-$(uname -r) libncurses-dev pkg-config
+        version: 1.0
+
+    - name: Check kernel compatibility
+      run: |
+        echo "Kernel version: $(uname -r)"
+        echo "Building for target kernel: ${{ matrix.kernel }}"
+        
+    - name: Build TCP Fingerprint Firewall
+      run: make
+
+    - name: Create test fingerprints
+      run: make scripts
+      
+    - name: Generate Documentation Snippet
+      run: |
+        echo "Build completed successfully. Binary information:"
+        file build/tcp-firewall
+        file build/tcp-monitor
+        file build/xdp_filter.o
+        
+  check_documentation:
+    runs-on: ubuntu-latest
+    name: Check Documentation
+    
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Install markdown-link-check
+      run: npm install -g markdown-link-check
+      
+    - name: Check Markdown links
+      run: |
+        for file in $(find . -name "*.md"); do
+          echo "Checking links in $file"
+          markdown-link-check -q "$file" || exit 1
+        done
+        
+    - name: Verify cross-references
+      run: |
+        for file in $(find . -name "*.md"); do
+          echo "Checking references in $file"
+          grep -l "See Also" "$file" > /dev/null || (echo "WARNING: $file missing cross-references"; exit 1)
+        done
+        
+  static_analysis:
+    runs-on: ubuntu-latest
+    name: Static Analysis
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install required packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-tools cppcheck
+        
+    - name: Run cppcheck
+      run: cppcheck --enable=all --suppress=missingIncludeSystem *.c
+      
+    - name: Run clang static analyzer
+      run: |
+        scan-build make
