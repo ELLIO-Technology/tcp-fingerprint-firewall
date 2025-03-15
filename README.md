@@ -16,14 +16,18 @@
 ```
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ELLIO-Technology/tcp-fingerprint-firewall/actions)
-[![License: AGPL v3](https://img.shields.io/badge/License-Dual_AGPL%20v3_/_Proprietary-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![License: AGPL v3 / Propreitary](https://img.shields.io/badge/License-Dual_AGPL%20v3_/_Proprietary-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Kernel: 5.5+](https://img.shields.io/badge/Kernel-5.5%2B-orange.svg)](https://www.kernel.org/)
-[![Security: Fingerprinting](https://img.shields.io/badge/Security-Fingerprinting-red.svg)](https://github.com/ellio-tech/tcp-fingerprint-firewall)
+[![Security: Fingerprinting](https://img.shields.io/badge/Security-Fingerprinting-red.svg)](https://github.com/ELLIO-Technology/tcp-fingerprint-firewall)
 [![eBPF: XDP](https://img.shields.io/badge/eBPF-XDP-blueviolet.svg)](https://ebpf.io/what-is-ebpf/)
 
 <p align="center">
   <img src="screenshots/status.png" alt="TCP Fingerprint Firewall in action" width="80%">
 </p>
+
+## Demo
+[Check the demo](screenshots/demo.mp4_)
+
 
 ## 🛡️ Protection Against Adversaries Knocking
 
