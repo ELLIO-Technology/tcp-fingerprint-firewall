@@ -26,7 +26,7 @@
 </p>
 
 ## Demo
-[Check the demo](screenshots/demo.mp4_)
+[Check the demo](screenshots/demo.mp4)
 
 
 ## 🛡️ Protection Against Adversaries Knocking
