@@ -15,7 +15,7 @@
  ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝╚══════╝                                                    
 ```
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ellio-tech/tcp-fingerprint-firewall/actions)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/ELLIO-Technology/tcp-fingerprint-firewall/actions)
 [![License: AGPL v3](https://img.shields.io/badge/License-Dual_AGPL%20v3_/_Proprietary-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Kernel: 5.5+](https://img.shields.io/badge/Kernel-5.5%2B-orange.svg)](https://www.kernel.org/)
 [![Security: Fingerprinting](https://img.shields.io/badge/Security-Fingerprinting-red.svg)](https://github.com/ellio-tech/tcp-fingerprint-firewall)
