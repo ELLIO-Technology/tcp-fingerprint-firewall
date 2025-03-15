@@ -1,0 +1,42 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang llvm gcc make libbpf-dev libelf-dev linux-headers-generic libncurses-dev pkg-config
+    
+    - name: Setup kernel headers
+      run: |
+        # Get the specific kernel headers for the runner
+        KERNEL_VERSION=$(uname -r)
+        sudo apt-get install -y linux-headers-$KERNEL_VERSION
+        
+        # Fix include paths for clang
+        sudo ln -sf /usr/include/x86_64-linux-gnu/asm /usr/include/asm
+        sudo ln -sf /usr/include/x86_64-linux-gnu/bits /usr/include/bits
+        sudo ln -sf /usr/include/x86_64-linux-gnu/gnu /usr/include/gnu
+        sudo ln -sf /usr/include/x86_64-linux-gnu/sys /usr/include/sys
+    
+    - name: Build
+      run: |
+        make clean
+        make all
+        make scripts
+        
+    - name: Run tests
+      run: |
+        make test
+

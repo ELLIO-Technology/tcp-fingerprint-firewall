@@ -1,0 +1,31 @@
+Source: tcp-fingerprint-firewall
+Section: net
+Priority: optional
+Maintainer: Vlad Iliushin <oss@ellio.tech>
+Build-Depends: debhelper-compat (= 13),
+               build-essential,
+               libbpf-dev,
+               libelf-dev,
+               clang,
+               llvm,
+               linux-headers-generic,
+               libncurses-dev,
+               pkg-config
+Standards-Version: 4.6.0
+Homepage: https://github.com/ELLIO-Technology/tcp-fingerprint-firewall
+Vcs-Git: https://github.com/ELLIO-Technology/tcp-fingerprint-firewall.git
+Vcs-Browser: https://github.com/ELLIO-Technology/tcp-fingerprint-firewall
+
+Package: tcp-fingerprint-firewall
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         libbpf1,
+         libelf1,
+         libncurses6
+Description: eBPF-based TCP fingerprint firewall
+ TCP Fingerprint Firewall operates at the bleeding edge of network defense
+ technology, leveraging eBPF/XDP capability to intercept and analyze packet
+ traffic at wire speed before it reaches your network stack.
+ .
+ The firewall identifies and blocks scanning tools by their unique TCP
+ fingerprints during the reconnaissance phase.
