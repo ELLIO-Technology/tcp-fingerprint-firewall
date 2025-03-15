@@ -1,16 +1,15 @@
 # GitHub Actions Workflows for TCP Fingerprint Firewall
 
-This directory contains GitHub Actions workflow files that automate testing, security scanning, building, and deployment of the TCP Fingerprint Firewall project.
+This directory contains GitHub Actions workflow files that automate testing, building, and security scanning of the TCP Fingerprint Firewall project.
 
 ## Workflow Overview
 
-### 1. CI Pipeline (`ci.yml`)
+### 1. Build Pipeline (`build.yml`)
 
-This workflow handles continuous integration:
+This workflow handles the basic build process:
 
-- **Build Testing**: Compiles the project on multiple kernel versions
-- **Documentation Checks**: Verifies that documentation is consistently cross-referenced and links work
-- **Static Analysis**: Runs cppcheck and clang static analyzer on the codebase
+- **Build Testing**: Compiles the project on the latest Ubuntu
+- **Run Tests**: Executes basic test procedures
 
 Triggered on: Push to main branch, Pull requests to main branch
 
@@ -23,27 +22,7 @@ This workflow validates that all commits include a properly formatted DCO (Devel
 - Provides helpful error messages for non-compliant commits
 
 Triggered on: Pull requests to main branch
-
-### 3. Security Scan (`security.yml`)
-
-This workflow performs security analysis:
-
-- **CodeQL Analysis**: Runs GitHub's CodeQL to find security vulnerabilities
-- **Dependency Review**: On pull requests, checks for vulnerabilities in dependencies
-- **Secret Scanning**: Uses Gitleaks to detect hardcoded secrets or credentials
-
-Triggered on: Push to main branch, Pull requests to main branch, Weekly schedule
-
-### 4. Build and Test (`deploy-test.yml`)
-
-This workflow handles building, packaging, and testing:
-
-- **Build Binary Package**: Creates a distributable tarball of compiled binaries
-- **Release Creation**: Automatically creates GitHub releases when tags are pushed
-- **Installation Testing**: Tests the installation script on a clean environment
-
-Triggered on: Push to main branch, Push of version tags, Pull requests to main branch
-
+ 
 ## Best Practices Used
 
 These workflows implement several industry best practices:

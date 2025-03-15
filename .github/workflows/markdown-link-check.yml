@@ -1,0 +1,37 @@
+name: Check Markdown links
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly
+
+jobs:
+  markdown-link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+        
+      - name: Check links in all Markdown files
+        run: |
+          echo "::group::Checking Markdown Links"
+          FAILED=false
+          for file in $(find . -name "*.md"); do
+            echo "Checking links in $file"
+            markdown-link-check "$file" -q || FAILED=true
+          done
+          if [ "$FAILED" = true ]; then
+            echo "::error::Some links are broken. Please fix them."
+            exit 1
+          fi
+          echo "::endgroup::"
