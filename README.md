@@ -151,6 +151,7 @@ Our approach to security is built around these core principles:
 
 The future of TCP Fingerprint Firewall includes:
 
+- **Normalize the name of the tool**: Use "Recon Shield" as an official name of the tool
 - **Improved ALLOW rules**: Automatic fingerprint generation from traffic analysis
 - **Cloud-Native Deployment**: Kubernetes operator for cloud infrastructure protection
 - **Threat Intelligence Sharing**: Fingerprint database sharing
