@@ -21,9 +21,8 @@
 [![Security: Fingerprinting](https://img.shields.io/badge/Security-Fingerprinting-red.svg)](https://github.com/ELLIO-Technology/tcp-fingerprint-firewall)
 [![eBPF: XDP](https://img.shields.io/badge/eBPF-XDP-blueviolet.svg)](https://ebpf.io/what-is-ebpf/)
 
-<p align="center">
-  <img src="screenshots/status.png" alt="TCP Fingerprint Firewall in action" width="80%">
-</p>
+![TCP Fingerprint Firewall in action](screenshots/status.png "TCP Fingerprint Firewall in action")
+
 
 ## Demo
 [Check the demo](screenshots/demo.mp4)
@@ -37,9 +36,7 @@
 
 ## 🔍 The Invisible Battlefield
 
-<p align="center">
-  <img src="screenshots/monitoring.png" alt="Real-time monitoring dashboard" width="80%">
-</p>
+![Real-time monitoring dashboard](screenshots/monitoring.png "Real-time monitoring dashboard")
 
 Every day, thousands of automated scanners probe the internet looking for vulnerable systems. These scanners aren't just random - they have distinct TCP fingerprints:
 
