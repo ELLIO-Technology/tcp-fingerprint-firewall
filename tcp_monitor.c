@@ -902,44 +902,6 @@ static void calculate_summary(fingerprint_entry_t *entries, int count, stats_sum
     summary->active_ips = unique_count;
 }
 
-/**
- * Draw a horizontal bar graph
- */
-static void draw_bar(int y, int x, int width, double value, double max, int attr)
-{
-    int bar_width = 0;
-    
-    // Always draw empty bar for zero values
-    // Otherwise calculate the bar width proportional to max
-    if (value > 0 && max > 0) {
-        double ratio = value / max;
-        // Cap ratio at 1.0 to avoid overfilling
-        if (ratio > 1.0) ratio = 1.0;
-        bar_width = (int)(ratio * width);
-        
-        // Always show at least 1 character if there's any value at all
-        if (bar_width == 0 && value > 0)
-            bar_width = 1;
-    }
-    
-    // Draw the bar container
-    mvaddch(y, x, '[');
-    
-    // Draw the filled part with the specified attribute
-    attron(attr);
-    for (int i = 0; i < bar_width; i++) {
-        mvaddch(y, x + 1 + i, '#');
-    }
-    attroff(attr);
-    
-    // Fill the rest with spaces
-    for (int i = bar_width; i < width; i++) {
-        mvaddch(y, x + 1 + i, ' ');
-    }
-    
-    // Close the bar
-    mvaddch(y, x + width + 1, ']');
-}
 
 /**
  * Format a number with unit prefix (K, M, G)
@@ -1035,13 +997,7 @@ static void draw_summary(stats_summary_t *summary, int term_cols, int color_pair
     format_number(summary->drop_hits, drop_hits, sizeof(drop_hits));
     format_number(summary->pass_hits, pass_hits, sizeof(pass_hits));
     
-    // Determine max values for bars
-    double max_rate = summary->total_rate > 0 ? summary->total_rate : 1.0;
-    double max_count = summary->total_fingerprints > 0 ? summary->total_fingerprints : 1.0;
-    (void)max_rate;  // May be unused in some configurations, silence warning
-    
-    // Don't need to modify the summary data structure here
-    // The draw_bar function will handle zero values correctly
+    // Remove unused variables since we removed rate displays
     
     // Row 1 - Active fingerprints and IPs
     attron(COLOR_PAIR(color_pair) | A_BOLD);
@@ -1051,110 +1007,30 @@ static void draw_summary(stats_summary_t *summary, int term_cols, int color_pair
     
     y++;
     
-    // Format rate strings for each section
-    char total_rate_str[32], drop_rate_str[32], pass_rate_str[32];
-    
-    // Format total rate
-    if (summary->total_rate < 0.1) {
-        snprintf(total_rate_str, sizeof(total_rate_str), "0 hits/sec");
-    } else if (summary->total_rate < 1000) {
-        snprintf(total_rate_str, sizeof(total_rate_str), "%.1f hits/sec", summary->total_rate);
-    } else if (summary->total_rate < 1000000) {
-        snprintf(total_rate_str, sizeof(total_rate_str), "%.1fK hits/sec", summary->total_rate/1000.0);
-    } else {
-        snprintf(total_rate_str, sizeof(total_rate_str), "%.1fM hits/sec", summary->total_rate/1000000.0);
-    }
-    
-    // Format drop rate
-    if (summary->drop_rate < 0.1) {
-        snprintf(drop_rate_str, sizeof(drop_rate_str), "0 hits/sec");
-    } else if (summary->drop_rate < 1000) {
-        snprintf(drop_rate_str, sizeof(drop_rate_str), "%.1f hits/sec", summary->drop_rate);
-    } else if (summary->drop_rate < 1000000) {
-        snprintf(drop_rate_str, sizeof(drop_rate_str), "%.1fK hits/sec", summary->drop_rate/1000.0);
-    } else {
-        snprintf(drop_rate_str, sizeof(drop_rate_str), "%.1fM hits/sec", summary->drop_rate/1000000.0);
-    }
-    
-    // Format pass rate
-    if (summary->pass_rate < 0.1) {
-        snprintf(pass_rate_str, sizeof(pass_rate_str), "0 hits/sec");
-    } else if (summary->pass_rate < 1000) {
-        snprintf(pass_rate_str, sizeof(pass_rate_str), "%.1f hits/sec", summary->pass_rate);
-    } else if (summary->pass_rate < 1000000) {
-        snprintf(pass_rate_str, sizeof(pass_rate_str), "%.1fK hits/sec", summary->pass_rate/1000.0);
-    } else {
-        snprintf(pass_rate_str, sizeof(pass_rate_str), "%.1fM hits/sec", summary->pass_rate/1000000.0);
-    }
-    
     // Row 2 - Header for total
     mvprintw(y, 2, "%-6s", "Total:");
-    mvprintw(y, 10, "%-6d FPs", summary->total_fingerprints);
-    mvprintw(y, 25, "%-10s hits", total_hits);
-    mvprintw(y, 45, "%s", total_rate_str);
-    
-    // Draw rate bar
-    draw_bar(y, 65, term_cols - 70, summary->total_rate, max_rate, COLOR_PAIR(COLOR_BAR));
+    mvprintw(y, 10, "%d Fingerprints", summary->total_fingerprints);
+    mvprintw(y, 35, "%s hits", total_hits);
     
     y++;
     
     // Row 3 - DROP stats
     attron(COLOR_PAIR(COLOR_DROP));
     mvprintw(y, 2, "%-6s", "DROP:");
-    mvprintw(y, 10, "%-6d FPs", summary->drop_fingerprints);
-    mvprintw(y, 25, "%-10s hits", drop_hits);
-    mvprintw(y, 45, "%s", drop_rate_str);
+    mvprintw(y, 10, "%d Fingerprints", summary->drop_fingerprints);
+    mvprintw(y, 35, "%s hits", drop_hits);
     
-    // Draw a progress bar for DROP action
-    int bar_width = 0;
-    // Only show a non-empty bar if there are actual hits AND non-zero rate
-    if (summary->drop_hits > 0 && summary->drop_rate > 0 && summary->total_fingerprints > 0) {
-        double ratio = (double)summary->drop_fingerprints / max_count;
-        if (ratio > 1.0) ratio = 1.0;
-        bar_width = (int)(ratio * (term_cols - 70));
-    }
-    
-    mvaddch(y, 65, '[');
-    attron(COLOR_PAIR(COLOR_DROP));
-    for (int i = 0; i < bar_width; i++) {
-        mvaddch(y, 66 + i, '#');
-    }
     attroff(COLOR_PAIR(COLOR_DROP));
-    
-    for (int i = bar_width; i < term_cols - 70; i++) {
-        mvaddch(y, 66 + i, ' ');
-    }
-    mvaddch(y, 65 + term_cols - 69, ']');
     
     y++;
     
     // Row 4 - PASS stats
     attron(COLOR_PAIR(COLOR_PASS));
     mvprintw(y, 2, "%-6s", "PASS:");
-    mvprintw(y, 10, "%-6d FPs", summary->pass_fingerprints);
-    mvprintw(y, 25, "%-10s hits", pass_hits);
-    mvprintw(y, 45, "%s", pass_rate_str);
+    mvprintw(y, 10, "%d Fingerprints", summary->pass_fingerprints);
+    mvprintw(y, 35, "%s hits", pass_hits);
     
-    // Draw a progress bar for PASS action
-    int pass_bar_width = 0;
-    if (summary->pass_hits > 0 && summary->total_fingerprints > 0) {
-        // Only show a non-empty bar if there are actual hits
-        double ratio = (double)summary->pass_fingerprints / max_count;
-        if (ratio > 1.0) ratio = 1.0;
-        pass_bar_width = (int)(ratio * (term_cols - 70));
-    }
-    
-    mvaddch(y, 65, '[');
-    attron(COLOR_PAIR(COLOR_PASS));
-    for (int i = 0; i < pass_bar_width; i++) {
-        mvaddch(y, 66 + i, '#');
-    }
     attroff(COLOR_PAIR(COLOR_PASS));
-    
-    for (int i = pass_bar_width; i < term_cols - 70; i++) {
-        mvaddch(y, 66 + i, ' ');
-    }
-    mvaddch(y, 65 + term_cols - 69, ']');
 }
 
 /**
@@ -1331,20 +1207,8 @@ static void draw_table(fingerprint_entry_t *entries, int count, display_settings
         format_time(entry->actual_time, time_buf, sizeof(time_buf));
         mvprintw(y + i, term_cols - 45, "%s", time_buf);
         
-        // Hits with rate - format to fit large numbers (up to 999,999,999)
-        char hits_buf[32];
-        if (entry->rate > 0) {
-            if (entry->rate < 1000) {
-                snprintf(hits_buf, sizeof(hits_buf), "%lu (%.0f/s)", entry->stats.count, entry->rate);
-            } else if (entry->rate < 1000000) {
-                snprintf(hits_buf, sizeof(hits_buf), "%lu (%.1fK/s)", entry->stats.count, entry->rate/1000.0);
-            } else {
-                snprintf(hits_buf, sizeof(hits_buf), "%lu (%.1fM/s)", entry->stats.count, entry->rate/1000000.0);
-            }
-        } else {
-            snprintf(hits_buf, sizeof(hits_buf), "%lu", entry->stats.count);
-        }
-        mvprintw(y + i, term_cols - 25, "%-16s", hits_buf);
+        // Hits - just show the count without rate
+        mvprintw(y + i, term_cols - 25, "%-16lu", entry->stats.count);
         
         // Action
         int action_color = (entry->action == XDP_DROP) ? COLOR_DROP : COLOR_PASS;
@@ -1540,21 +1404,8 @@ static void draw_details(fingerprint_entry_t *entry, int term_rows, int term_col
         snprintf(hits_buf, sizeof(hits_buf), "%.1fM", local_entry.stats.count / 1000000.0);
     }
     
-    // Format rate with suffixes
-    char rate_buf[32];
-    if (local_entry.rate < 0.1) {
-        snprintf(rate_buf, sizeof(rate_buf), "0 hits/sec");
-    } else if (local_entry.rate < 1000) {
-        snprintf(rate_buf, sizeof(rate_buf), "%.1f hits/sec", local_entry.rate);
-    } else if (local_entry.rate < 1000000) {
-        snprintf(rate_buf, sizeof(rate_buf), "%.1fK hits/sec", local_entry.rate/1000.0);
-    } else {
-        snprintf(rate_buf, sizeof(rate_buf), "%.1fM hits/sec", local_entry.rate/1000000.0);
-    }
-    
-    // Hits and rate
+    // Hits only (no rate)
     mvprintw(y++, box_x + 4, "Total Hits:      %s", hits_buf);
-    mvprintw(y++, box_x + 4, "Current Rate:    %s", rate_buf);
     
     // Action
     int action_color = (local_entry.action == XDP_DROP) ? COLOR_DROP : COLOR_PASS;
