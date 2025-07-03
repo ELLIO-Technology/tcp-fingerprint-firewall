@@ -1,0 +1,128 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - 'dev'
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu24-libbpf1:
+    name: Build for Ubuntu 24 (libbpf1) - ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          libbpf-dev \
+          libelf-dev \
+          clang \
+          llvm \
+          linux-headers-generic \
+          linux-libc-dev \
+          linux-source \
+          ncurses-dev \
+          pkg-config
+    
+    - name: Setup kernel headers
+      run: |
+        # Remove existing asm symlink and create proper one
+        sudo rm -f /usr/include/asm
+        
+        # Point to the actual architecture-specific headers
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "x86_64" ]; then
+          sudo ln -sf x86_64-linux-gnu/asm /usr/include/asm
+        elif [ "$ARCH" = "aarch64" ]; then
+          sudo ln -sf aarch64-linux-gnu/asm /usr/include/asm
+        else
+          sudo ln -sf asm-generic /usr/include/asm
+        fi
+        
+        # Verify the symlink works
+        echo "asm symlink now points to:"
+        ls -la /usr/include/asm
+        echo "Checking if required headers are accessible:"
+        ls -la /usr/include/asm/types.h || echo "types.h not found"
+        ls -la /usr/include/asm/byteorder.h || echo "byteorder.h not found"
+    
+    - name: Setup cross-compilation for ARM64
+      if: matrix.arch == 'aarch64'
+      run: |
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+        echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+    
+    - name: Build
+      run: |
+        make clean
+        make all
+        make scripts
+    
+    - name: Package binaries
+      run: |
+        mkdir -p release/tcp-fingerprint-firewall-ubuntu24-libbpf1-${{ matrix.arch }}
+        cp build/* release/tcp-fingerprint-firewall-ubuntu24-libbpf1-${{ matrix.arch }}/
+        cp README.md USAGE.md LICENSE.md release/tcp-fingerprint-firewall-ubuntu24-libbpf1-${{ matrix.arch }}/
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tcp-fingerprint-firewall-ubuntu24-libbpf1-${{ matrix.arch }}
+        path: release/tcp-fingerprint-firewall-ubuntu24-libbpf1-${{ matrix.arch }}/
+
+  release:
+    needs: build-ubuntu24-libbpf1
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          tcp-fingerprint-firewall-ubuntu24-libbpf1-x86_64.zip
+          tcp-fingerprint-firewall-ubuntu24-libbpf1-aarch64.zip
+        body: |
+          ## TCP Fingerprint Firewall Release
+          
+          ### Installation
+          
+          **For Ubuntu 24.04+ / Debian 13+ / RHEL 10+ (libbpf1):**
+          ```bash
+          # Download for your architecture
+          wget https://github.com/ELLIO-Technology/tcp-fingerprint-firewall/releases/latest/download/tcp-fingerprint-firewall-ubuntu24-libbpf1-x86_64.zip
+          unzip tcp-fingerprint-firewall-ubuntu24-libbpf1-x86_64.zip
+          cd tcp-fingerprint-firewall-ubuntu24-libbpf1-x86_64
+          sudo ./load_firewall.sh eth0
+          ```
+          
+          **For older distributions (Ubuntu 20.04/22.04, Debian 11/12, RHEL 8/9):**
+          Please compile from source:
+          ```bash
+          git clone https://github.com/ELLIO-Technology/tcp-fingerprint-firewall.git
+          cd tcp-fingerprint-firewall
+          sudo ./install.sh
+          ```
+          
+          ### What's included
+          - `tcp-firewall` - Main control program
+          - `tcp-monitor` - Real-time monitoring tool
+          - `xdp_filter.o` - eBPF bytecode
+          - `load_firewall.sh` - Helper script
+        draft: false
+        prerelease: false
