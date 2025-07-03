@@ -997,7 +997,6 @@ static void draw_summary(stats_summary_t *summary, int term_cols, int color_pair
     format_number(summary->drop_hits, drop_hits, sizeof(drop_hits));
     format_number(summary->pass_hits, pass_hits, sizeof(pass_hits));
     
-    // Remove unused variables since we removed rate displays
     
     // Row 1 - Active fingerprints and IPs
     attron(COLOR_PAIR(color_pair) | A_BOLD);
@@ -1599,10 +1598,8 @@ static void monitor_loop(const char *interface, bool interactive)
             }
         }
         
-        // Always redraw if not paused, or if explicitly needed
         if (!settings.paused || need_redraw) {
-            // Process and display data
-            // Instead of clear(), only clear specific areas that need updating
+            // Clear only the areas that need updating
             
             // Clear header area (line 0)
             move(0, 0);

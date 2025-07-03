@@ -42,9 +42,7 @@ Every day, thousands of automated scanners probe the internet looking for vulner
 
 | Scanner | TCP Window Size | TCP Options           | Typical Behavior |
 |---------|----------------|-----------------------|------------------|
-| Nmap    | 1024, 2048, 3072, 4096 | Often none or limited | Port scanning, service discovery |
-| ZMap    | 65535 | Limited/None          | Mass internet scanning, research |
-| Masscan | 65535 | Limited/None          | Fastest internet scanner, used by attackers |
+| Masscan | 1024 | Limited/None          | Fastest internet scanner |
 
 TCP Fingerprint Firewall identifies these scanners by their unique TCP fingerprints and **blocks them before they gather a single byte of information about your services**.
 
@@ -98,17 +96,11 @@ sudo ./build/tcp-monitor eth0
 TCP Fingerprint Firewall offers surgical precision in defining what traffic to block:
 
 ```bash
-# Block Nmap scanner fingerprints
+# Block Masscan scanner fingerprints
 sudo ./build/tcp-firewall eth0 add "1024:::" DROP
 
-# Block ZMap scanner fingerprints
-sudo ./build/tcp-firewall eth0 add "65535:::" DROP
-
-# Block packets with specific option patterns (this example will drop legitimate traffic)
+# Block packets with specific option patterns (this example will drop legitimate traffic as well)
 sudo ./build/tcp-firewall eth0 add "*:2-4-8-1-3:1460:7" DROP
-
-# Block any packet without TCP options (common in basic scanning tools)
-sudo ./build/tcp-firewall eth0 add "*:::" DROP
 ```
 
 Each configuration surgically targets specific adversarial tools without affecting legitimate traffic.
@@ -170,11 +162,11 @@ This project is made possible by the expertise and dedication of:
 
 This software is dual-licensed under:
 - [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html) - For open-source use
-- Proprietary license - For commercial use without AGPLv3 requirements
+- Proprietary license - For commercial use without AGPLv3 requirements (reach out to info@ellio.tech for more information)
 
 ---
 
 <p align="center">
   <em>Stop attackers before they even know you exist.</em><br>
-  <strong>TCP Fingerprint Firewall: The invisible shield for your infrastructure.</strong>
+  <strong>Recon Shield: The invisible shield for your infrastructure.</strong>
 </p>
