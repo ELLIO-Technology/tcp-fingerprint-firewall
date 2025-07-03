@@ -1182,7 +1182,7 @@ static void draw_table_header(int y, int term_cols, display_settings_t *settings
     if (settings->sort_by == SORT_BY_MUONFP) {
         attron(COLOR_PAIR(COLOR_SORT));
     }
-    mvprintw(y, 20, "MuonFP");
+    mvprintw(y, 21, "MuonFP");
     if (settings->sort_by == SORT_BY_MUONFP) {
         attroff(COLOR_PAIR(COLOR_SORT));
     }
@@ -1190,7 +1190,7 @@ static void draw_table_header(int y, int term_cols, display_settings_t *settings
     if (settings->sort_by == SORT_BY_TIME) {
         attron(COLOR_PAIR(COLOR_SORT));
     }
-    mvprintw(y, term_cols - 30, "Last Seen");
+    mvprintw(y, term_cols - 45, "Last Seen");
     if (settings->sort_by == SORT_BY_TIME) {
         attroff(COLOR_PAIR(COLOR_SORT));
     }
@@ -1198,7 +1198,7 @@ static void draw_table_header(int y, int term_cols, display_settings_t *settings
     if (settings->sort_by == SORT_BY_HITS) {
         attron(COLOR_PAIR(COLOR_SORT));
     }
-    mvprintw(y, term_cols - 17, "Hits");
+    mvprintw(y, term_cols - 25, "Hits");
     if (settings->sort_by == SORT_BY_HITS) {
         attroff(COLOR_PAIR(COLOR_SORT));
     }
@@ -1292,7 +1292,7 @@ static void draw_table(fingerprint_entry_t *entries, int count, display_settings
             fp_parts[part][0] = '\0';
         }
         
-        int fp_x = 20;
+        int fp_x = 21;
         
         // Window size
         attron(COLOR_PAIR(COLOR_WINDOW_SIZE));
@@ -1326,12 +1326,12 @@ static void draw_table(fingerprint_entry_t *entries, int count, display_settings
         mvprintw(y + i, fp_x, "%s", fp_parts[3]);
         attroff(COLOR_PAIR(COLOR_SCALE));
         
-        // Last seen time
+        // Last seen time - even more space allocated
         char time_buf[32];
         format_time(entry->actual_time, time_buf, sizeof(time_buf));
-        mvprintw(y + i, term_cols - 30, "%s", time_buf);
+        mvprintw(y + i, term_cols - 45, "%s", time_buf);
         
-        // Hits with rate - more compact format to fit in column
+        // Hits with rate - format to fit large numbers (up to 999,999,999)
         char hits_buf[32];
         if (entry->rate > 0) {
             if (entry->rate < 1000) {
@@ -1344,7 +1344,7 @@ static void draw_table(fingerprint_entry_t *entries, int count, display_settings
         } else {
             snprintf(hits_buf, sizeof(hits_buf), "%lu", entry->stats.count);
         }
-        mvprintw(y + i, term_cols - 17, "%-8s", hits_buf);
+        mvprintw(y + i, term_cols - 25, "%-16s", hits_buf);
         
         // Action
         int action_color = (entry->action == XDP_DROP) ? COLOR_DROP : COLOR_PASS;
