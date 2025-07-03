@@ -472,15 +472,18 @@ static int collect_fingerprint_data(fingerprint_entry_t *entries, int max_entrie
     time_t current_time = time(NULL);
     time_t uptime_secs = 0;
     
-    // Get system uptime from /proc/uptime
+    // Get system uptime from /proc/uptime - use double for better precision
     FILE *uptime_file = fopen("/proc/uptime", "r");
     if (uptime_file) {
-        float uptime;
-        if (fscanf(uptime_file, "%f", &uptime) == 1) {
+        double uptime;
+        if (fscanf(uptime_file, "%lf", &uptime) == 1) {
             uptime_secs = (time_t)uptime;
         }
         fclose(uptime_file);
     }
+    
+    // Calculate boot time once to avoid jitter
+    time_t boot_time = current_time - uptime_secs;
     
     // Save current count to calculate rates
     for (int i = 0; i < max_entries && i < count; i++) {
@@ -581,9 +584,9 @@ static int collect_fingerprint_data(fingerprint_entry_t *entries, int max_entrie
                     }
                 }
                 
-                // Calculate actual time
-                time_t timestamp_secs = stats.timestamp / 1000000000;
-                entry->actual_time = current_time - uptime_secs + timestamp_secs;
+                // Calculate actual time using pre-calculated boot_time to avoid jitter
+                time_t timestamp_secs = stats.timestamp / 1000000000ULL;
+                entry->actual_time = boot_time + timestamp_secs;
                 
                 // Calculate hits per second - better rate handling
                 if (found_existing && prev_count > 0 && entry->stats.count >= prev_count) {
@@ -660,9 +663,9 @@ static int collect_fingerprint_data(fingerprint_entry_t *entries, int max_entrie
                     entry->rule_str[sizeof(entry->rule_str)-1] = '\0';
                 }
                 
-                // Calculate actual time
-                time_t timestamp_secs = stats.timestamp / 1000000000;
-                entry->actual_time = current_time - uptime_secs + timestamp_secs;
+                // Calculate actual time using pre-calculated boot_time to avoid jitter
+                time_t timestamp_secs = stats.timestamp / 1000000000ULL;
+                entry->actual_time = boot_time + timestamp_secs;
                 
                 // Calculate hits per second - better rate handling
                 if (found_existing && prev_count > 0 && entry->stats.count >= prev_count) {
@@ -960,7 +963,7 @@ static void format_time(time_t t, char *buf, size_t bufsize)
 {
     struct tm *tm = localtime(&t);
     if (tm) {
-        strftime(buf, bufsize, "%H:%M:%S", tm);
+        strftime(buf, bufsize, "%m-%d %H:%M:%S", tm);
     } else {
         snprintf(buf, bufsize, "Unknown");
     }
@@ -972,7 +975,7 @@ static void format_time(time_t t, char *buf, size_t bufsize)
 static void draw_header(const char *interface, display_settings_t *settings, int term_cols)
 {
     attron(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
-    mvprintw(0, 0, "TCP Fingerprint Firewall Monitor");
+    mvprintw(0, 0, "Recon Shield Monitor");
     attroff(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
     
     mvprintw(0, 22, "| Interface: %s", interface);
@@ -1381,7 +1384,7 @@ static void draw_details(fingerprint_entry_t *entry, int term_rows, int term_col
     
     // Draw header
     attron(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
-    mvprintw(0, 0, "TCP Fingerprint Firewall Details");
+    mvprintw(0, 0, "Recon Shield Details");
     attroff(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
     
     // Draw details box
@@ -1845,7 +1848,7 @@ static void monitor_loop(const char *interface, bool interactive)
  */
 static void print_usage(const char *prog)
 {
-    printf("TCP Fingerprint Firewall Monitor\n");
+    printf("Recon Shield Monitor\n");
     printf("Usage: %s [options] <interface>\n\n"
            "Options:\n"
            "  -i, --interactive      Interactive mode (default)\n"
