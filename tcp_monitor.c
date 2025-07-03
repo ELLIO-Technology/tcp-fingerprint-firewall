@@ -1388,8 +1388,6 @@ static void draw_details(fingerprint_entry_t *entry, int term_rows, int term_col
     // Create a local copy of the entry to prevent issues if data changes while viewing
     fingerprint_entry_t local_entry = *entry;
     
-    clear();
-    
     // Draw header
     attron(COLOR_PAIR(COLOR_HEADER) | A_BOLD);
     mvprintw(0, 0, "Recon Shield Details");
@@ -1753,7 +1751,23 @@ static void monitor_loop(const char *interface, bool interactive)
         // Always redraw if not paused, or if explicitly needed
         if (!settings.paused || need_redraw) {
             // Process and display data
-            clear();
+            // Instead of clear(), only clear specific areas that need updating
+            
+            // Clear header area (line 0)
+            move(0, 0);
+            clrtoeol();
+            
+            // Clear summary area (lines 2-6)
+            for (int i = 2; i <= 6; i++) {
+                move(i, 0);
+                clrtoeol();
+            }
+            
+            // Clear content area from line 7 to bottom
+            for (int i = 7; i < term_rows; i++) {
+                move(i, 0);
+                clrtoeol();
+            }
             
             // Process entries (filter and sort)
             count = process_entries(entries, count, &settings);
@@ -1767,6 +1781,8 @@ static void monitor_loop(const char *interface, bool interactive)
             
             // Show details panel or table
             if (settings.show_details && count > 0 && settings.selected_row < count) {
+                // Details view needs full screen clear since it completely changes layout
+                clear();
                 draw_details(&entries[settings.selected_row], term_rows, term_cols);
             } else {
                 draw_table(entries, count, &settings, term_rows, term_cols);
