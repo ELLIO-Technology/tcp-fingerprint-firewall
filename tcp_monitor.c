@@ -78,6 +78,7 @@ typedef struct {
     int selected_row;
     bool show_details;
     int start_row;
+    bool paused;        // Pause auto-refresh for copying text
 } display_settings_t;
 
 // Sort constants
@@ -1012,6 +1013,13 @@ static void draw_header(const char *interface, display_settings_t *settings, int
     if (settings->filter[0] != '\0') {
         mvprintw(0, term_cols / 2 - 5, "| Filter: %s", settings->filter);
     }
+    
+    // Draw pause indicator
+    if (settings->paused) {
+        attron(COLOR_PAIR(COLOR_DROP) | A_BOLD);  // Red and bold for visibility
+        mvprintw(0, term_cols / 2 + 10, "| PAUSED");
+        attroff(COLOR_PAIR(COLOR_DROP) | A_BOLD);
+    }
 }
 
 /**
@@ -1368,7 +1376,7 @@ static void draw_table(fingerprint_entry_t *entries, int count, display_settings
     // Draw footer
     mvhline(term_rows - 2, 0, ACS_HLINE, term_cols);
     attron(A_BOLD);
-    mvprintw(term_rows - 1, 0, "q:Quit  f:Filter  s:Sort  a:Action  r:Reverse  Up/Down:Navigate  Enter:Details");
+    mvprintw(term_rows - 1, 0, "q:Quit  p/Space:Pause  f:Filter  s:Sort  a:Action  r:Reverse  Up/Down:Navigate  Enter:Details");
     attroff(A_BOLD);
 }
 
@@ -1681,8 +1689,11 @@ static void monitor_loop(const char *interface, bool interactive)
         .reverse_sort = false,    // Newest first
         .selected_row = 0,
         .show_details = false,
-        .start_row = 0
+        .start_row = 0,
+        .paused = false           // Start unpaused
     };
+    
+    bool need_redraw = true;  // Force initial draw
     
     // Initialize all entries before we start
     for (int i = 0; i < MAX_ENTRIES; i++) {
@@ -1726,34 +1737,49 @@ static void monitor_loop(const char *interface, bool interactive)
             continue;
         }
         
-        // Collect data
-        int count = collect_fingerprint_data(entries, MAX_ENTRIES);
-        
-        // Process and display data
-        clear();
-        
-        // Process entries (filter and sort)
-        count = process_entries(entries, count, &settings);
-        
-        // Calculate summary statistics
-        calculate_summary(entries, count, &summary);
-        
-        // Draw screen elements
-        draw_header(interface, &settings, term_cols);
-        draw_summary(&summary, term_cols, COLOR_NORMAL);
-        
-        // Show details panel or table
-        if (settings.show_details && count > 0 && settings.selected_row < count) {
-            draw_details(&entries[settings.selected_row], term_rows, term_cols);
+        // Collect data only if not paused
+        int count;
+        if (!settings.paused) {
+            count = collect_fingerprint_data(entries, MAX_ENTRIES);
         } else {
-            draw_table(entries, count, &settings, term_rows, term_cols);
+            // When paused, use the existing data count
+            count = MAX_ENTRIES;
+            // Find actual count of initialized entries
+            for (count = 0; count < MAX_ENTRIES; count++) {
+                if (entries[count].ip == 0) break;
+            }
         }
         
-        refresh();
+        // Always redraw if not paused, or if explicitly needed
+        if (!settings.paused || need_redraw) {
+            // Process and display data
+            clear();
+            
+            // Process entries (filter and sort)
+            count = process_entries(entries, count, &settings);
+            
+            // Calculate summary statistics
+            calculate_summary(entries, count, &summary);
+            
+            // Draw screen elements
+            draw_header(interface, &settings, term_cols);
+            draw_summary(&summary, term_cols, COLOR_NORMAL);
+            
+            // Show details panel or table
+            if (settings.show_details && count > 0 && settings.selected_row < count) {
+                draw_details(&entries[settings.selected_row], term_rows, term_cols);
+            } else {
+                draw_table(entries, count, &settings, term_rows, term_cols);
+            }
+            
+            refresh();
+            need_redraw = false;  // Reset redraw flag
+        }
         
         // Check for keyboard input
         int ch = getch();
         if (ch != ERR) {  // If a key was pressed
+            need_redraw = true;  // Any key press requires redraw
             if (settings.show_details) {
                 // Any key exits details mode
                 settings.show_details = false;
@@ -1833,6 +1859,12 @@ static void monitor_loop(const char *interface, bool interactive)
                                          term_rows - 1, 0);
                         settings.selected_row = 0;
                         settings.start_row = 0;
+                        break;
+                        
+                    case 'p':  // Toggle pause
+                    case 'P':
+                    case ' ':  // Space bar also toggles pause
+                        settings.paused = !settings.paused;
                         break;
                 }
             }
